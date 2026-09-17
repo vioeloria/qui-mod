@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2025-2026, s0up and the autobrr contributors.
+ * SPDX-License-Identifier: GPL-2.0-or-later
+ */
+
+import { Outlet } from "@tanstack/react-router"
+import { MobileFooterNav } from "@/components/layout/MobileFooterNav"
+import { Header } from "@/components/layout/Header"
+import { Sidebar } from "@/components/layout/Sidebar"
+import { LayoutRouteProvider } from "@/contexts/LayoutRouteContext"
+import { usePersistedSidebarState } from "@/hooks/usePersistedSidebarState"
+import { Menu } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
+import { cn } from "@/lib/utils"
+import { useTranslation } from "react-i18next"
+import { MobileScrollProvider, useMobileScroll } from "@/contexts/MobileScrollContext"
+import { IspDataProvider } from "@/contexts/IspDataContext"
+import { TorrentSelectionProvider } from "@/contexts/TorrentSelectionContext"
+import { useCustomThemes } from "@/hooks/useCustomThemes"
+
+function AppLayoutContent() {
+  const { t } = useTranslation("common")
+  const [sidebarCollapsed, setSidebarCollapsed] = usePersistedSidebarState(false) // Desktop: persisted state
+  const { isFooterVisible } = useMobileScroll()
+
+  return (
+    <div className="flex h-[100dvh] bg-background">
+      {/* Desktop Sidebar - Collapsible */}
+      <div className={cn(
+        "hidden lg:flex transition-all duration-300 ease-out overflow-hidden",
+        sidebarCollapsed ? "w-0 opacity-0" : "w-64 opacity-100"
+      )}>
+        <div className="w-64 flex-shrink-0">
+          <Sidebar />
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col min-w-0 relative">
+        <Header
+          sidebarCollapsed={sidebarCollapsed}
+        >
+          {/* Desktop toggle button */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="hidden lg:flex transition-transform duration-200 hover:scale-110"
+              >
+                <Menu className={cn(
+                  "h-5 w-5 transition-transform duration-300",
+                  sidebarCollapsed && "rotate-90"
+                )} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">
+              {sidebarCollapsed ? t("sidebar.showSidebar") : t("sidebar.hideSidebar")}
+            </TooltipContent>
+          </Tooltip>
+        </Header>
+        <main className={cn(
+          "flex-1 overflow-y-auto transition-[padding] duration-300",
+          isFooterVisible ? "pb-[calc(4rem+env(safe-area-inset-bottom))]" : "pb-0",
+          "lg:pb-0"
+        )}>
+          <Outlet />
+        </main>
+      </div>
+
+      {/* Mobile Footer Navigation */}
+      <MobileFooterNav />
+    </div>
+  )
+}
+
+export function AppLayout() {
+  // Registers and applies stored custom themes for authenticated users.
+  useCustomThemes()
+  return (
+    <LayoutRouteProvider>
+      <TorrentSelectionProvider>
+        <IspDataProvider>
+          <MobileScrollProvider>
+            <AppLayoutContent />
+          </MobileScrollProvider>
+        </IspDataProvider>
+      </TorrentSelectionProvider>
+    </LayoutRouteProvider>
+  )
+}
