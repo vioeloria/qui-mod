@@ -89,6 +89,9 @@ VOLUME /config
 # Copy binary and entrypoint
 COPY --from=go-builder /app/qui /usr/local/bin/
 COPY distrib/docker/entrypoint.sh /entrypoint.sh
+# Ensure the entrypoint is executable regardless of build-context file mode
+# (Windows build contexts lose the POSIX exec bit).
+RUN chmod +x /entrypoint.sh
 
 # Verify Compose user mode still works when shared PUID/PGID variables are present.
 RUN PUID=99 PGID=100 su-exec 99:100 /entrypoint.sh --version
